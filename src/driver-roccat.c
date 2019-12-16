@@ -32,6 +32,7 @@
 
 #include "libratbag-private.h"
 #include "libratbag-hidraw.h"
+#include "driver-roccat.h"
 
 #define ROCCAT_PROFILE_MAX			4
 #define ROCCAT_BUTTON_MAX			23
@@ -68,12 +69,11 @@ struct roccat_settings_report {
 	uint8_t yres[5];
 	uint8_t padding1;
 	uint8_t report_rate;
-	uint8_t padding2[21];
-	uint16_t checksum;
-//	uint8_t padding2[4];
-//	uint8_t light;
-//	uint8_t light_heartbit;
-//	uint8_t padding3[5];
+	uint8_t padding2[21]; // how to make variable?
+	uint16_t checksum; // how to make variable?
+	// uint8_t light;
+	// uint8_t light_heartbit;
+	// uint8_t padding3[5];
 } __attribute__((packed));
 
 struct roccat_macro {
@@ -96,6 +96,7 @@ struct roccat_macro {
 } __attribute__((packed));
 
 struct roccat_data {
+	// here should be device specific values enum
 	uint8_t profiles[(ROCCAT_PROFILE_MAX + 1)][ROCCAT_REPORT_SIZE_PROFILE];
 	struct roccat_settings_report settings[(ROCCAT_PROFILE_MAX + 1)];
 	struct roccat_macro macros[(ROCCAT_PROFILE_MAX + 1)][(ROCCAT_BUTTON_MAX + 1)];
@@ -106,32 +107,15 @@ struct roccat_button_type_mapping {
 	enum ratbag_button_type type;
 };
 
-static const struct roccat_button_type_mapping roccat_button_type_mapping[] = {
-	{ 0, RATBAG_BUTTON_TYPE_LEFT },
-	{ 1, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 3, RATBAG_BUTTON_TYPE_EXTRA },
-	{ 4, RATBAG_BUTTON_TYPE_SIDE },
-	{ 5, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 6, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 7, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 8, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 9, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 10, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
-//	{ 11, RATBAG_BUTTON_TYPE_ }, /* top button above the wheel */
-	{ 12, RATBAG_BUTTON_TYPE_LEFT },
-	{ 13, RATBAG_BUTTON_TYPE_RIGHT },
-	{ 14, RATBAG_BUTTON_TYPE_MIDDLE },
-	{ 15, RATBAG_BUTTON_TYPE_EXTRA },
-	{ 16, RATBAG_BUTTON_TYPE_SIDE },
-	{ 17, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
-	{ 18, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
-	{ 19, RATBAG_BUTTON_TYPE_WHEEL_UP },
-	{ 20, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
-	{ 21, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
-	{ 22, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
-//	{ 23, RATBAG_BUTTON_TYPE_ }, /* top button above the wheel */
-};
+/* device specific settings, should be in drv_data? */
+int button_max;
+int report_size_profile;
+int report_size_settings;
+int padding2_length;
+bool has_checksum;
+struct roccat_button_type mapping roccat_button_type_mapping[];
+int min_dpi;
+int max_dpi;
 
 static enum ratbag_button_type
 roccat_raw_to_button_type(uint8_t data)
@@ -152,12 +136,12 @@ struct roccat_button_mapping {
 };
 
 static struct roccat_button_mapping roccat_button_mapping[] = {
-/* FIXME:	{ 0, Disabled }, */
+	/* FIXME: { 0, Disabled }, */
 	{ 1, BUTTON_ACTION_BUTTON(1) },
 	{ 2, BUTTON_ACTION_BUTTON(2) },
 	{ 3, BUTTON_ACTION_BUTTON(3) },
 	{ 4, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK) },
-/* FIXME:	{ 5, Shortcut (modifier + key) }, */
+	/* FIXME: { 5, Shortcut (modifier + key) }, */
 	{ 6, BUTTON_ACTION_NONE },
 	{ 7, BUTTON_ACTION_BUTTON(4) },
 	{ 8, BUTTON_ACTION_BUTTON(5) },
@@ -165,7 +149,7 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
 	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
 	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
-/* FIXME:	{ 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 */
+	/* FIXME: { 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 */
 	{ 16, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP) },
 	{ 17, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
 	{ 18, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN) },
@@ -173,7 +157,7 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 21, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
 	{ 22, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
 	{ 26, BUTTON_ACTION_KEY(KEY_LEFTMETA) },
-/* FIXME:	{ 27, open driver },  -> hidraw report 02 83 01 00 00 00 00 00 */
+	/* FIXME: { 27, open driver },  -> hidraw report 02 83 01 00 00 00 00 00 */
 	{ 32, BUTTON_ACTION_KEY(KEY_CONFIG) },
 	{ 33, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
 	{ 34, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
@@ -184,12 +168,12 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 39, BUTTON_ACTION_KEY(KEY_VOLUMEDOWN) },
 	{ 48, BUTTON_ACTION_MACRO },
 	{ 65, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE) },
-/* FIXME:	{ 66, Easywheel sensitivity }, */
-/* FIXME:	{ 67, Easywheel profile }, */
-/* FIXME:	{ 68, Easywheel CPI }, */
-/* FIXME:	{ 81, Other Easyshift },	-> hidraw report 03 00 ff 05 01 00 00 00 */
-/* FIXME:	{ 82, Other Easyshift Lock },	-> hidraw report 03 00 ff 05 01 00 00 00 */
-/* FIXME:	{ 83, Both Easyshift },		-> hidraw report 03 00 ff 04 01 00 00 00 */
+	/* FIXME: { 66, Easywheel sensitivity }, */
+	/* FIXME: { 67, Easywheel profile }, */
+	/* FIXME: { 68, Easywheel CPI }, */
+	/* FIXME: { 81, Other Easyshift },	-> hidraw report 03 00 ff 05 01 00 00 00 */
+	/* FIXME: { 82, Other Easyshift Lock },	-> hidraw report 03 00 ff 05 01 00 00 00 */
+	/* FIXME: { 83, Both Easyshift },		-> hidraw report 03 00 ff 04 01 00 00 00 */
 };
 
 static const struct ratbag_button_action*
@@ -655,9 +639,9 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 	uint8_t *buf;
 	int rc;
 
-	if (dpi_x < 200 || dpi_x > 8200 || dpi_x % 50)
+	if (dpi_x < min_dpi || dpi_x > max_dpi || dpi_x % 50)
 		return -EINVAL;
-	if (dpi_y < 200 || dpi_y > 8200 || dpi_y % 50)
+	if (dpi_y < min_dpi || dpi_y > max_dpi || dpi_y % 50)
 		return -EINVAL;
 
 	settings_report = &drv_data->settings[profile->index];
@@ -667,7 +651,8 @@ roccat_write_resolution_dpi(struct ratbag_resolution *resolution,
 
 	buf = (uint8_t*)settings_report;
 
-	settings_report->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_SETTINGS);
+	if (has_checksum)
+		settings_report->checksum = roccat_compute_crc(buf, ROCCAT_REPORT_SIZE_SETTINGS);
 
 	rc = ratbag_hidraw_set_feature_report(device, ROCCAT_REPORT_ID_SETTINGS,
 					      buf, ROCCAT_REPORT_SIZE_SETTINGS);
@@ -769,6 +754,77 @@ roccat_read_profile(struct ratbag_profile *profile)
 }
 
 static int
+roccat_device_type_init(struct ratbag_device *device)
+{
+	struct roccat_device_type *device_type;
+	device_type = ratbag_device_data_roccat_get_device_type(device->data);
+
+	if (device_type == ROCCAT_DEVICE_TYPE_KONE_XTD) {
+		button_max = 23;
+		report_size_profile = 77;
+		report_size_settings = 43;
+		padding2_length = 21
+		has_checksum = true;
+		roccat_button_type_mapping = {
+			{ 0, RATBAG_BUTTON_TYPE_LEFT },
+			{ 1, RATBAG_BUTTON_TYPE_RIGHT },
+			{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
+			{ 3, RATBAG_BUTTON_TYPE_EXTRA },
+			{ 4, RATBAG_BUTTON_TYPE_SIDE },
+			{ 5, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+			{ 6, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+			{ 7, RATBAG_BUTTON_TYPE_WHEEL_UP },
+			{ 8, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+			{ 9, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+			{ 10, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+			// { 11, RATBAG_BUTTON_TYPE_ }, /* top button above the wheel */
+			{ 12, RATBAG_BUTTON_TYPE_LEFT },
+			{ 13, RATBAG_BUTTON_TYPE_RIGHT },
+			{ 14, RATBAG_BUTTON_TYPE_MIDDLE },
+			{ 15, RATBAG_BUTTON_TYPE_EXTRA },
+			{ 16, RATBAG_BUTTON_TYPE_SIDE },
+			{ 17, RATBAG_BUTTON_TYPE_WHEEL_LEFT },
+			{ 18, RATBAG_BUTTON_TYPE_WHEEL_RIGHT },
+			{ 19, RATBAG_BUTTON_TYPE_WHEEL_UP },
+			{ 20, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+			{ 21, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+			{ 22, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+			// { 23, RATBAG_BUTTON_TYPE_ }, /* top button above the wheel */
+		};
+		min_dpi = 200;
+		max_dpi = 8200;
+	} else if (device_type == ROCCAT_DEVICE_TYPE_KONE_PURE) {
+		button_max = 17;
+		report_size_profile = 59;
+		report_size_settings = 31;
+		padding2_length = 11
+		has_checksum = false;
+		roccat_button_type_mapping = {
+			{ 0, RATBAG_BUTTON_TYPE_LEFT },
+			{ 1, RATBAG_BUTTON_TYPE_RIGHT },
+			{ 2, RATBAG_BUTTON_TYPE_MIDDLE },
+			{ 3, RATBAG_BUTTON_TYPE_EXTRA },
+			{ 4, RATBAG_BUTTON_TYPE_SIDE },
+			{ 5, RATBAG_BUTTON_TYPE_WHEEL_UP },
+			{ 6, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+			{ 7, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+			{ 8, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+			{ 9, RATBAG_BUTTON_TYPE_LEFT },
+			{ 10, RATBAG_BUTTON_TYPE_RIGHT },
+			{ 11, RATBAG_BUTTON_TYPE_MIDDLE },
+			{ 12, RATBAG_BUTTON_TYPE_EXTRA },
+			{ 13, RATBAG_BUTTON_TYPE_SIDE },
+			{ 14, RATBAG_BUTTON_TYPE_WHEEL_UP },
+			{ 15, RATBAG_BUTTON_TYPE_WHEEL_DOWN },
+			{ 16, RATBAG_BUTTON_TYPE_RESOLUTION_UP },
+			{ 17, RATBAG_BUTTON_TYPE_RESOLUTION_DOWN },
+		};
+		min_dpi = 100;
+		max_dpi = 5000;
+	}
+}
+
+static int
 roccat_probe(struct ratbag_device *device)
 {
 	int rc;
@@ -787,6 +843,7 @@ roccat_probe(struct ratbag_device *device)
 
 	drv_data = zalloc(sizeof(*drv_data));
 	ratbag_set_drv_data(device, drv_data);
+	roccat_device_type_init(device);
 
 	/* profiles are 0-indexed */
 	ratbag_device_init_profiles(device,
@@ -836,7 +893,7 @@ roccat_remove(struct ratbag_device *device)
 }
 
 struct ratbag_driver roccat_driver = {
-	.name = "Roccat Kone XTD",
+	.name = "Roccat",
 	.id = "roccat",
 	.probe = roccat_probe,
 	.remove = roccat_remove,

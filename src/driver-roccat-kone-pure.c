@@ -69,11 +69,10 @@ struct roccat_settings_report {
 	uint8_t padding1;
 	uint8_t report_rate;
 	uint8_t padding2[11];
-//	uint16_t checksum;
-//	uint8_t padding2[4];
-//	uint8_t light;
-//	uint8_t light_heartbit;
-//	uint8_t padding3[5];
+	//	uint16_t checksum;
+	//	uint8_t light;
+	//	uint8_t light_heartbit;
+	//	uint8_t padding3[5];
 } __attribute__((packed));
 
 struct roccat_macro {
@@ -146,20 +145,20 @@ struct roccat_button_mapping {
 };
 
 static struct roccat_button_mapping roccat_button_mapping[] = {
-/* FIXME:	{ 0, Disabled }, */
+	/* FIXME: { 0, Disabled }, */
 	{ 1, BUTTON_ACTION_BUTTON(1) },
 	{ 2, BUTTON_ACTION_BUTTON(2) },
 	{ 3, BUTTON_ACTION_BUTTON(3) },
 	{ 4, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_DOUBLECLICK) },
-/* FIXME:	{ 5, Shortcut (modifier + key) }, */
+	/* FIXME: { 5, Shortcut (modifier + key) }, */
 	{ 6, BUTTON_ACTION_NONE },
 	{ 7, BUTTON_ACTION_BUTTON(4) },
 	{ 8, BUTTON_ACTION_BUTTON(5) },
-	//{ 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
-	//{ 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
+	// { 9, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_LEFT) },
+	// { 10, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_RIGHT) },
 	{ 13, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_UP) },
 	{ 14, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_WHEEL_DOWN) },
-/* FIXME:	{ 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 */
+	/* FIXME: { 15, quicklaunch },  -> hidraw report 03 00 60 07 01 00 00 00 */
 	{ 16, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_CYCLE_UP) },
 	{ 17, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_UP) },
 	{ 18, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_PROFILE_DOWN) },
@@ -167,8 +166,8 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 21, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_UP) },
 	{ 22, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_RESOLUTION_DOWN) },
 	{ 26, BUTTON_ACTION_KEY(KEY_LEFTMETA) },
-/* FIXME:	{ 27, open driver },  -> hidraw report 02 83 01 00 00 00 00 00 */
-	//{ 32, BUTTON_ACTION_KEY(KEY_CONFIG) },
+	/* FIXME: { 27, open driver },  -> hidraw report 02 83 01 00 00 00 00 00 */
+	// { 32, BUTTON_ACTION_KEY(KEY_CONFIG) },
 	{ 33, BUTTON_ACTION_KEY(KEY_PREVIOUSSONG) },
 	{ 34, BUTTON_ACTION_KEY(KEY_NEXTSONG) },
 	{ 35, BUTTON_ACTION_KEY(KEY_PLAYPAUSE) },
@@ -178,12 +177,12 @@ static struct roccat_button_mapping roccat_button_mapping[] = {
 	{ 39, BUTTON_ACTION_KEY(KEY_VOLUMEDOWN) },
 	{ 48, BUTTON_ACTION_MACRO },
 	{ 65, BUTTON_ACTION_SPECIAL(RATBAG_BUTTON_ACTION_SPECIAL_SECOND_MODE) },
-/* FIXME:	{ 66, Easywheel sensitivity }, */
-/* FIXME:	{ 67, Easywheel profile }, */
-/* FIXME:	{ 68, Easywheel CPI }, */
-/* FIXME:	{ 81, Other Easyshift },	-> hidraw report 03 00 ff 05 01 00 00 00 */
-/* FIXME:	{ 82, Other Easyshift Lock },	-> hidraw report 03 00 ff 05 01 00 00 00 */
-/* FIXME:	{ 83, Both Easyshift },		-> hidraw report 03 00 ff 04 01 00 00 00 */
+	/* FIXME: { 66, Easywheel sensitivity }, */
+	/* FIXME: { 67, Easywheel profile }, */
+	/* FIXME: { 68, Easywheel CPI }, */
+	/* FIXME: { 81, Other Easyshift },	-> hidraw report 03 00 ff 05 01 00 00 00 */
+	/* FIXME: { 82, Other Easyshift Lock },	-> hidraw report 03 00 ff 05 01 00 00 00 */
+	/* FIXME: { 83, Both Easyshift },		-> hidraw report 03 00 ff 04 01 00 00 00 */
 };
 
 static const struct ratbag_button_action*
@@ -834,7 +833,7 @@ roccat_remove(struct ratbag_device *device)
 }
 
 struct ratbag_driver roccat_driver = {
-	.name = "Roccat Kone Pure",
+	.name = "Roccat",
 	.id = "roccat",
 	.probe = roccat_probe,
 	.remove = roccat_remove,

@@ -34,6 +34,7 @@
 #include "libratbag-private.h"
 #include "libratbag-data.h"
 #include "hidpp20.h"
+#include "driver-roccat.h"
 
 #define GROUP_DEVICE "Device"
 
@@ -68,6 +69,10 @@ struct data_hidpp10 {
 	int led_count;
 };
 
+struct data_roccat {
+	enum roccat_device_type device_type;
+};
+
 struct data_steelseries {
 	int device_version;
 	int button_count;
@@ -89,6 +94,7 @@ struct ratbag_device_data {
 	union {
 		struct data_hidpp20 hidpp20;
 		struct data_hidpp10 hidpp10;
+		struct data_roccat roccat;
 		struct data_steelseries steelseries;
 	};
 
@@ -171,6 +177,28 @@ init_data_hidpp20(struct ratbag *ratbag,
 			data->hidpp20.quirk = HIDPP20_QUIRK_G305;
 		else if(streq(str, "G602"))
 			data->hidpp20.quirk = HIDPP20_QUIRK_G602;
+	}
+}
+
+static void
+init_data_roccat(struct ratbag *ratbag,
+		  GKeyFile *keyfile,
+		  struct ratbag_device_data *data)
+{
+	const char *group = "Driver/roccat";
+	GError *error = NULL;
+	char *str;
+
+	str = g_key_file_get_string(keyfile, group, "DeviceType", NULL);
+	if (str) {
+		if (streq(str, "KoneXTD"))
+			data->roccat.device_type = ROCCAT_DEVICE_TYPE_KONE_XTD;
+		else if(streq(str, "KonePure"))
+			data->roccat.device_type = ROCCAT_DEVICE_TYPE_KONE_PURE;
+		else {
+			g_set_error(error, G_KEY_FILE_ERROR, G_KEY_FILE_ERROR_INVALID_VALUE, NULL);
+			g_error_free(error);
+		}
 	}
 }
 
@@ -580,6 +608,16 @@ ratbag_device_data_hidpp20_get_quirk(const struct ratbag_device_data *data)
 	assert(data->drivertype == HIDPP20);
 
 	return data->hidpp20.quirk;
+}
+
+/* Roccat */
+
+enum roccat_device_type
+ratbag_device_data_roccat_get_device_type(const struct ratbag_device_data *data)
+{
+	assert(data->drivertype == ROCCAT);
+
+	return data->roccat.device_type;
 }
 
 /* SteelSeries */
