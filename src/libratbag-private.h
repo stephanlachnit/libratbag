@@ -258,6 +258,7 @@ struct ratbag_resolution {
 
 	bool is_active;
 	bool is_default;
+	bool is_disabled;
 	bool dirty;
 	uint32_t capabilities;
 };
@@ -570,7 +571,7 @@ static inline void
 ratbag_resolution_set_cap(struct ratbag_resolution *res,
 			  enum ratbag_resolution_capability cap)
 {
-	assert(cap <= RATBAG_RESOLUTION_CAP_SEPARATE_XY_RESOLUTION);
+	assert(cap <= RATBAG_RESOLUTION_CAP_DISABLE);
 
 	res->capabilities |= (1 << cap);
 }

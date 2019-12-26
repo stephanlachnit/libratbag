@@ -291,6 +291,14 @@ org.freedesktop.ratbag1.Resolution
 
         Index of the resolution
 
+.. attribute:: Capabilities
+
+        :type: au
+        :flags: read-only, constant
+
+        Array of uints from the :cpp:enum:`ratbag_resolution_capability`
+        from libratbag.h.
+
 .. attribute:: IsActive
 
         :type: b
@@ -318,6 +326,19 @@ org.freedesktop.ratbag1.Resolution
         times. This property is read-only, use the
         :func:`SetDefault` method to set a resolution as
         the default resolution.
+
+.. attribute:: IsDisabled
+
+        :type: b
+        :flags: read-only, mutable
+
+        True if this resolution is disabled, false otherwise.
+        If the device does not have the disabled resolution
+        capability, this property is always false.
+
+        This property is read-only, use the :func:`SetDisabled`
+        or :func:`SetEnabled` method to set a resolution as
+        disabled or enabled .
 
 .. attribute:: Resolution
 
@@ -357,6 +378,14 @@ org.freedesktop.ratbag1.Resolution
 .. function:: SetDefault() → ()
 
         Set this resolution to be the default
+
+.. function:: SetDisabled() → ()
+
+        Set this resolution to be disabled
+
+.. function:: SetEnabled() → ()
+
+        Set this resolution to be enabled
 
 .. _button:
 
